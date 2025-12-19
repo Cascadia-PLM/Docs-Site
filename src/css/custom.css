@@ -1,0 +1,127 @@
+/**
+ * Cascadia PLM Brand Colors
+ * Primary: sky-500 (#0ea5e9)
+ * Foreground: slate-900 (#0f172a)
+ */
+
+:root {
+  /* Primary colors - sky-500 blue */
+  --ifm-color-primary: #0ea5e9;
+  --ifm-color-primary-dark: #0284c7;
+  --ifm-color-primary-darker: #0369a1;
+  --ifm-color-primary-darkest: #075985;
+  --ifm-color-primary-light: #38bdf8;
+  --ifm-color-primary-lighter: #7dd3fc;
+  --ifm-color-primary-lightest: #bae6fd;
+
+  /* Code blocks */
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(14, 165, 233, 0.1);
+
+  /* Font family */
+  --ifm-font-family-base: Inter, system-ui, -apple-system, sans-serif;
+  --ifm-heading-font-family: Inter, system-ui, -apple-system, sans-serif;
+
+  /* Slate colors for text */
+  --ifm-font-color-base: #0f172a;
+  --ifm-heading-color: #0f172a;
+
+  /* Background */
+  --ifm-background-color: #ffffff;
+  --ifm-background-surface-color: #f8fafc;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #38bdf8;
+  --ifm-color-primary-dark: #0ea5e9;
+  --ifm-color-primary-darker: #0284c7;
+  --ifm-color-primary-darkest: #0369a1;
+  --ifm-color-primary-light: #7dd3fc;
+  --ifm-color-primary-lighter: #bae6fd;
+  --ifm-color-primary-lightest: #e0f2fe;
+
+  --docusaurus-highlighted-code-line-bg: rgba(56, 189, 248, 0.15);
+
+  --ifm-background-color: #0f172a;
+  --ifm-background-surface-color: #1e293b;
+  --ifm-font-color-base: #f1f5f9;
+  --ifm-heading-color: #f8fafc;
+}
+
+/* Navbar styling */
+.navbar {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.navbar__title {
+  font-weight: 700;
+}
+
+/* Sidebar styling */
+.menu__link {
+  border-radius: 0.375rem;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background-color: rgba(14, 165, 233, 0.1);
+}
+
+/* Table of contents */
+.table-of-contents__link--active {
+  color: var(--ifm-color-primary);
+}
+
+/* Admonition/callout styling */
+.alert--info {
+  --ifm-alert-background-color: rgba(14, 165, 233, 0.1);
+  --ifm-alert-border-color: #0ea5e9;
+}
+
+/* Footer styling */
+.footer {
+  background-color: #0f172a;
+}
+
+.footer--dark {
+  --ifm-footer-background-color: #0f172a;
+}
+
+/* Hero section on landing page */
+.hero {
+  background: linear-gradient(to bottom, #f8fafc, #ffffff);
+}
+
+[data-theme='dark'] .hero {
+  background: linear-gradient(to bottom, #1e293b, #0f172a);
+}
+
+/* Links */
+a {
+  color: var(--ifm-color-primary);
+}
+
+a:hover {
+  color: var(--ifm-color-primary-dark);
+}
+
+/* Search bar styling */
+.navbar__search-input {
+  border-radius: 0.5rem;
+}
+
+/* Theme-aware images for documentation screenshots */
+[data-theme='light'] .dark-only,
+[data-theme='dark'] .light-only {
+  display: none;
+}
+
+/* Screenshot styling */
+.screenshot {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
+}
+
+[data-theme='dark'] .screenshot {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+}
