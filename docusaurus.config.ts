@@ -49,7 +49,7 @@ const config: Config = {
         docs: {
           routeBasePath: '/',
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/kai-kircher/CascadiaPLM/tree/main/DocsSite/',
+          editUrl: 'https://github.com/cascadia-plm/CascadiaPLM/tree/main/DocsSite/',
         },
         blog: false,
         theme: {
@@ -85,7 +85,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/kai-kircher/CascadiaPLM',
+          href: 'https://github.com/cascadia-plm/CascadiaPLM',
           label: 'GitHub',
           position: 'right',
         },
@@ -116,11 +116,11 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/kai-kircher/CascadiaPLM',
+              href: 'https://github.com/cascadia-plm/CascadiaPLM',
             },
             {
               label: 'Discussions',
-              href: 'https://github.com/kai-kircher/CascadiaPLM/discussions',
+              href: 'https://github.com/cascadia-plm/CascadiaPLM/discussions',
             },
           ],
         },
@@ -133,7 +133,7 @@ const config: Config = {
             },
             {
               label: 'AGPL License',
-              href: 'https://github.com/kai-kircher/CascadiaPLM/blob/main/LICENSE',
+              href: 'https://github.com/cascadia-plm/CascadiaPLM/blob/main/LICENSE',
             },
           ],
         },

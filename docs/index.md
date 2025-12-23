@@ -37,4 +37,4 @@ Cascadia is an open-source, code-first Product Lifecycle Management (PLM) system
 
 - Check the [Troubleshooting Guide](/troubleshooting/common-issues)
 - Browse the [FAQ](/troubleshooting/faq)
-- Open an issue on [GitHub](https://github.com/kai-kircher/CascadiaPLM/issues)
+- Open an issue on [GitHub](https://github.com/cascadia-plm/CascadiaPLM/issues)

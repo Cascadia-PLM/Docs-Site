@@ -18,7 +18,7 @@ This guide will help you set up the Cascadia PLM system for development.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/kai-kircher/CascadiaPLM.git
+git clone https://github.com/cascadia-plm/CascadiaPLM.git
 cd CascadiaPLM/CascadiaApp
 ```
 
