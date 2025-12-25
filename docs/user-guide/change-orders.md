@@ -38,19 +38,103 @@ Draft → Impact Review → Technical Review → Approved → Released → Close
 | **Closed** | Change order completed |
 | **Cancelled** | Change order rejected or abandoned |
 
-## Creating a Change Order
+## Change Orders List Overview
+
+The Change Orders page displays all ECOs with summary statistics and filtering options.
 
 ![Change Orders List](/img/screenshots/change-orders-list.png)
 *The change orders list shows all ECOs with their status, priority, and type.*
 
+### Summary Statistics
+
+At the top of the page, you'll see summary cards showing:
+
+| Statistic | Description |
+|-----------|-------------|
+| **Total ECOs** | Count of all change orders |
+| **Draft** | ECOs in initial creation |
+| **In Review** | ECOs awaiting approval |
+| **Released** | ECOs that have been implemented |
+
+### Filtering and Search
+
+- **Search**: Find ECOs by item number or title
+- **Column Sorting**: Click column headers to sort
+- **Status Filters**: Filter by workflow state
+
+## Creating a Change Order
+
 1. Navigate to **Change Orders** in the sidebar
-2. Click **New Change Order**
+2. Click **+ Create ECO** in the top right
 3. Fill in the required fields:
-   - **Title**: Brief description of the change
-   - **Description**: Detailed explanation
-   - **Reason for Change**: Why this change is needed
-   - **Priority**: Urgency level
-4. Click **Create**
+
+### Required Fields
+
+| Field | Description |
+|-------|-------------|
+| **Design** | The design this ECO affects |
+| **Item Number** | Unique identifier (auto-generated, e.g., ECO-001) |
+| **Title** | Brief description of the change |
+
+### Optional Fields
+
+| Field | Description |
+|-------|-------------|
+| **Description** | Detailed explanation of the change |
+| **Reason for Change** | Why this change is needed |
+| **Priority** | Urgency level (Low, Medium, High, Critical) |
+| **Type** | ECO, ECN, or ECR |
+
+4. Click **Create** to save the ECO in Draft state
+
+## ECO Detail View
+
+Click on any ECO number to open the detail view. The detail page has three tabs: **Overview**, **Affected Items**, and **History**.
+
+### Header Information
+
+The header shows:
+- ECO number with state badge (Draft, In Review, etc.)
+- ECO title
+- Branch indicator showing the ECO's working branch
+- Action buttons based on available workflow transitions
+
+### Overview Tab
+
+The Overview tab displays:
+
+**Basic Information**
+- Item Number and Title
+- Current State
+- Description and Reason for Change
+
+**Change Details**
+- Priority level
+- Type (ECO/ECN/ECR)
+- Target completion date (if set)
+
+### Affected Items Tab
+
+The Affected Items tab shows all items included in the change order with a hierarchical tree view.
+
+**Tree Structure**
+- Expand/collapse affected items to see their children
+- Each item shows: Item Number, Revision, Name, Type, State
+- Change action badge indicates what will happen (Release, Revise, etc.)
+
+**Adding Affected Items**
+1. Click **+ Add Affected Item**
+2. Search for the item to include
+3. Select the change action
+4. Confirm the addition
+
+### History Tab
+
+Shows the complete workflow history:
+- State transitions with timestamps
+- User who performed each action
+- Approval votes and comments
+- Guard evaluation results
 
 ## Adding Affected Items
 

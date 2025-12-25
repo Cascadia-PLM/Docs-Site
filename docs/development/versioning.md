@@ -30,9 +30,9 @@ Cascadia uses branches to isolate work:
 ```
 main:        [A] ─────────────────── [B] ─────── [C]
               │                       ↑           ↑
-eco/ECO-001:  └──[work]──[work]──────┘           │
-                                                  │
-eco/ECO-002:  ────────────[work]──[work]─────────┘
+eco/ECO-001:  └──[work]──[work]───────┘           │
+              |                                   │
+eco/ECO-002:  └───────────[work]──[work]──────────┘
 ```
 
 Benefits:
@@ -158,7 +158,7 @@ This enables:
 
 ### Creating a New Item
 
-New items are created in Draft state, typically on main (for initial setup) or on a branch (for controlled changes):
+New items are created in the Initial state defined in the given item type's  assigned lifecycle (e.g. "Draft"), typically on main (for initial setup) or on a branch (for controlled changes):
 
 ```
 1. Create item on main (Draft state)
@@ -174,16 +174,17 @@ New items are created in Draft state, typically on main (for initial setup) or o
 The standard way to make changes to released items:
 
 ```
-1. Create ECO (Change Order in Draft state)
+1. Create ECO (Change Order in Initial workflow state (e.g. "Draft"))
    
 2. Add affected items to ECO
-   ├── PN-001 (revise A → B)
-   └── PN-002 (revise A → B)
+   ├── PN-001 Rev A Released (mark item with Action "Revise")
+   └── PN-002 Rev A Released (mark item with Action "Revise")
 
 3. Checkout item for editing
    ├── System creates eco/ECO-001 branch if it doesn't exist
-   ├── Creates branchItem entry
-   └── Copies released version as starting point
+   ├── Creates branchItem entries for PN-001 and PN-002
+   ├── Copies released versions as starting point
+   └── Assigns copied versions new Rev indicator of "-" and new state of "Editable"
 
 4. Make changes on ECO branch
    ├── Edit item properties
@@ -387,16 +388,6 @@ If ECO-001 and ECO-002 both modify PN-001:
   - Accept merge (if changes don't conflict)
 
 Currently, Cascadia uses last-write-wins for simple cases. Complex merge conflict resolution is on the roadmap.
-
-
-### Items Without Designs
-
-Items can exist without a `designId` for:
-- Legacy imported data
-- Standalone items (rare)
-- Templates
-
-These items don't participate in versioning and use the traditional linear revision model.
 
 
 ### Branch Protection
