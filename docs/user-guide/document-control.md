@@ -11,9 +11,6 @@ Documents in Cascadia PLM provide controlled storage and versioning for technica
 
 The Documents page displays all documents in the system with summary statistics and filtering options.
 
-![Documents List](/img/screenshots/user-guide/documents-list.png)
-*The documents list shows all documents with their status and key metadata.*
-
 ### Summary Statistics
 
 At the top of the page, you'll see four summary cards:
@@ -36,9 +33,6 @@ At the top of the page, you'll see four summary cards:
 1. Navigate to **Documents** in the sidebar or click **View Documents** from the dashboard
 2. Click the **+ Create Document** button in the top right
 3. Fill in the document details:
-
-![Create Document Form](/img/screenshots/user-guide/create-document.png)
-*The Create New Document form with all available fields.*
 
 ### Required Fields
 

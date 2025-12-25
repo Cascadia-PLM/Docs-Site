@@ -11,9 +11,6 @@ Requirements in Cascadia PLM help you capture, track, and verify product require
 
 The Requirements page displays all requirements with summary statistics and filtering options.
 
-![Requirements List](/img/screenshots/user-guide/requirements-list.png)
-*The requirements list shows all requirements with their status and key metadata.*
-
 ### Summary Statistics
 
 At the top of the page, you'll see four summary cards:
@@ -36,9 +33,6 @@ At the top of the page, you'll see four summary cards:
 1. Navigate to **Requirements** in the sidebar
 2. Click **+ Create Requirement** in the top right
 3. Fill in the requirement details:
-
-![Create Requirement Form](/img/screenshots/user-guide/create-requirement.png)
-*The Create New Requirement form with all available fields.*
 
 ### Required Fields
 
