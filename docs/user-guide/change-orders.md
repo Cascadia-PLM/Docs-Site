@@ -42,9 +42,6 @@ Draft → Impact Review → Technical Review → Approved → Released → Close
 
 The Change Orders page displays all ECOs with summary statistics and filtering options.
 
-![Change Orders List](/img/screenshots/change-orders-list.png)
-*The change orders list shows all ECOs with their status, priority, and type.*
-
 ### Summary Statistics
 
 At the top of the page, you'll see summary cards showing:
@@ -88,6 +85,9 @@ At the top of the page, you'll see summary cards showing:
 4. Click **Create** to save the ECO in Draft state
 
 ## ECO Detail View
+
+![ECO Affected Items](/img/gifs/eco-affected-items.gif)
+*Viewing an ECO: overview, affected items tree, and workflow history.*
 
 Click on any ECO number to open the detail view. The detail page has three tabs: **Overview**, **Affected Items**, and **History**.
 
@@ -215,9 +215,6 @@ When the ECO transitions to "Technical Review", parts with the "Release" action 
 ### Configuration
 
 Lifecycle effects are configured per ECO workflow transition in the workflow builder:
-
-![Lifecycle Effects Panel](/img/screenshots/lifecycle-effects-panel.png)
-*The transition properties panel showing lifecycle effects configuration.*
 
 1. **Change Action**: Which affected item action this applies to (Release, Revise, etc.)
 2. **Target Lifecycle**: The lifecycle definition to use

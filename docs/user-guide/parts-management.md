@@ -11,9 +11,6 @@ Parts are the core item type in Cascadia PLM, representing manufacturing compone
 
 The Parts page displays all parts in the system with summary statistics and filtering options.
 
-![Parts List](/img/screenshots/user-guide/parts-list.png)
-*The parts list shows all parts with their revision, name, make/buy status, material, state, and cost.*
-
 ### Summary Statistics
 
 At the top of the page, you'll see four summary cards:
@@ -34,12 +31,12 @@ At the top of the page, you'll see four summary cards:
 
 ## Creating a Part
 
+![Create Part Workflow](/img/gifs/create-part-workflow.gif)
+*Creating a new part: selecting a design, creating a workspace, and filling in part details.*
+
 1. Navigate to **Parts** in the sidebar or click **View Parts** from the dashboard
 2. Click the **+ Create Part** button in the top right
 3. Fill in the required fields:
-
-![Create Part Form](/img/screenshots/user-guide/create-part.png)
-*The Create New Part form with all available fields.*
 
 ### Required Fields
 
@@ -65,6 +62,9 @@ At the top of the page, you'll see four summary cards:
 
 ## Part Detail View
 
+![Part Details and BOM](/img/gifs/part-details-bom.gif)
+*Exploring part details: viewing BOM relationships, relationship graph, and version history.*
+
 Click on any part number to open the detail view. The detail page has three tabs: **Details**, **Relationships**, and **History**.
 
 ### Header Information
@@ -77,9 +77,6 @@ The header shows:
 - Action buttons: **New Revision**, **Check Out**, **Delete**
 
 ### Details Tab
-
-![Part Details](/img/screenshots/user-guide/part-details.png)
-*The Part Details tab showing overview and manufacturing information.*
 
 The Details tab displays:
 
@@ -104,9 +101,6 @@ The Details tab displays:
 The BOM functionality is accessed through the **Relationships** tab on a part detail page.
 
 ### Viewing the BOM
-
-![Part Relationships](/img/screenshots/user-guide/part-relationships.png)
-*The Relationships tab showing BOM components with their properties.*
 
 The BOM table displays:
 
@@ -141,9 +135,6 @@ Parts can have multiple relationship types:
 
 The Relationship Graph provides an interactive visualization of the BOM hierarchy.
 
-![Relationship Graph](/img/screenshots/user-guide/part-graph.png)
-*The interactive relationship graph showing the BOM hierarchy.*
-
 ### Features
 
 - **Expand/Collapse**: Click the arrow to expand the graph section
@@ -163,9 +154,6 @@ The graph displays statistics showing:
 ## Version History
 
 The **History** tab shows the complete version history for a part.
-
-![Part History](/img/screenshots/user-guide/part-history.png)
-*The Version History tab showing all revisions and changes.*
 
 Each history entry shows:
 - Revision letter/number

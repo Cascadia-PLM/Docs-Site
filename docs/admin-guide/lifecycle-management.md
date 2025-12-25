@@ -20,9 +20,6 @@ The key innovation is **lifecycle effects**, which coordinate ECO workflow trans
 
 ### Via the Workflow Builder
 
-![Lifecycles List](/img/screenshots/lifecycles-list.png)
-*The lifecycles list shows all lifecycle definitions with their states and status.*
-
 1. Navigate to **Admin > Workflows**
 2. Click **New Lifecycle**
 3. Configure the definition:
@@ -101,17 +98,14 @@ Lifecycle effects are the key feature for ECO-to-Item coordination. They define 
 
 ### Accessing the Configuration
 
+![Workflow Builder](/img/gifs/workflow-builder.gif)
+*The visual workflow builder with states and transitions for ECO workflows.*
+
 1. Open a workflow in the Workflow Builder
 2. Select a transition (click the arrow between states)
 3. In the properties panel, scroll to **Lifecycle Effects**
 
-![Workflow Builder](/img/screenshots/workflow-builder.png)
-*The workflow builder showing an ECO workflow with states and transitions.*
-
 ### Adding a Lifecycle Effect
-
-![Lifecycle Effects Panel](/img/screenshots/lifecycle-effects-panel.png)
-*The transition properties panel with lifecycle effects configuration.*
 
 Click **Add Lifecycle Effect** and configure:
 

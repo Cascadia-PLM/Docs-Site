@@ -38,12 +38,12 @@ Designs are version containers that:
 
 ## Programs Management
 
+![Programs and Designs](/img/gifs/programs-designs.gif)
+*Navigating programs and designs: viewing program details, designs list, and BOM hierarchy.*
+
 ### Programs List
 
 Navigate to **Programs** in the sidebar to see all programs.
-
-![Programs List](/img/screenshots/user-guide/programs-list.png)
-*The programs list shows all programs with their status and key metadata.*
 
 #### Summary Statistics
 
@@ -75,9 +75,6 @@ Navigate to **Programs** in the sidebar to see all programs.
 ### Program Detail View
 
 Click on a program code to open the detail view.
-
-![Program Detail](/img/screenshots/user-guide/program-detail.png)
-*The program detail page showing overview and associated designs.*
 
 The program detail page shows:
 
@@ -140,9 +137,6 @@ From a program detail page:
 
 Click on a design to open the detail view.
 
-![Design Detail](/img/screenshots/user-guide/design-detail.png)
-*The design detail page showing structure and items.*
-
 #### Header Information
 
 The header shows:
@@ -173,9 +167,6 @@ The header shows:
 
 The Structure tab shows the Bill of Materials hierarchy for the design.
 
-![Design Structure](/img/screenshots/user-guide/design-structure.png)
-*The design structure showing BOM hierarchy.*
-
 Features:
 - Expandable tree view of the BOM
 - Filter by item number or name
@@ -185,9 +176,6 @@ Features:
 ### All Items Tab
 
 Lists all items belonging to this design:
-
-![Design Items](/img/screenshots/user-guide/design-items.png)
-*The All Items tab showing all items in the design.*
 
 Features:
 - Search items by name or number

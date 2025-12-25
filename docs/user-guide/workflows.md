@@ -49,9 +49,6 @@ Draft → Impact Review → Technical Review → Approved → Released
 
 The Workflows page displays all workflow definitions with summary statistics.
 
-![Workflows List](/img/screenshots/workflows-list.png)
-*The workflows list shows all workflow definitions with their status and statistics.*
-
 ### Summary Information
 
 Each workflow card displays:
@@ -68,9 +65,6 @@ Each workflow card displays:
 ## Lifecycles List Overview
 
 The Lifecycles page displays all lifecycle definitions.
-
-![Lifecycles List](/img/screenshots/lifecycles-list.png)
-*The lifecycles list shows all lifecycle definitions with their assigned item types.*
 
 ### Summary Information
 
@@ -186,6 +180,9 @@ Users vote "Approve" or "Reject" with optional comments. The transition only pro
 
 ## Using the Workflow Builder
 
+![Workflow Builder](/img/gifs/workflow-builder.gif)
+*The visual workflow builder: designing states and transitions for ECO approval workflows.*
+
 Access the workflow builder from **Workflows** in the sidebar.
 
 ### Creating a New Definition
@@ -198,9 +195,6 @@ Access the workflow builder from **Workflows** in the sidebar.
 ### Visual Editor
 
 The workflow builder uses a drag-and-drop interface:
-
-![Workflow Builder](/img/screenshots/workflow-builder.png)
-*The visual workflow builder with states and transitions.*
 
 **Canvas Controls**
 - **Zoom**: Use the +/- buttons or mouse wheel
