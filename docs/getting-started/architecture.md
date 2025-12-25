@@ -7,7 +7,7 @@ title: Architecture
 
 Cascadia PLM is a code-first Product Lifecycle Management system. This document provides a mental model of the system architecture and explains key design decisions.
 
-> **Detailed guides**: For implementation specifics, see [Service Patterns](./service-patterns), [Git-Style Versioning](./versioning), and [Database Patterns](./database-patterns).
+> **Detailed guides**: For implementation specifics, see [Service Patterns](/development/service-patterns), [Git-Style Versioning](/development/versioning), and [Database Patterns](/development/database-patterns).
 
 
 ## System Mental Model
@@ -91,7 +91,7 @@ items (base)              parts (type-specific)
 - Type-specific tables stay focused and small
 - Relationships point to `items.id`, not type-specific IDs
 
-**Learn more**: [Database Patterns](./database-patterns#the-two-table-pattern)
+**Learn more**: [Database Patterns](/development/database-patterns#the-two-table-pattern)
 
 
 ### 3. Git-Style Versioning
@@ -116,7 +116,7 @@ Cascadia:           main:     [A] ────────── [B] ───�
 
 **Trade-off**: More complex than linear revisions, but solves real workflow problems.
 
-**Learn more**: [Git-Style Versioning](./versioning)
+**Learn more**: [Git-Style Versioning](/development/versioning)
 
 
 ### 4. Service Layer Pattern
@@ -141,7 +141,7 @@ Route (thin)          Service (business logic)       Database
 - Services can call other services
 - Easier to understand "where does X happen?"
 
-**Learn more**: [Service Patterns](./service-patterns)
+**Learn more**: [Service Patterns](/development/service-patterns)
 
 
 ### 5. Program-Based Permissions
@@ -265,7 +265,7 @@ src/
 ### Extension Patterns
 
 **Adding a new item type**: Define schema, create type file, register in registry.
-See [Adding Item Types](./adding-item-types).
+See [Adding Item Types](/development/adding-item-types).
 
 **Custom workflow actions**: Add action handlers to workflow definition.
 
@@ -308,7 +308,7 @@ Registry config                     Database transactions
 
 ### Database
 
-- **Indexes**: Key queries have covering indexes (see [Database Patterns](./database-patterns#index-usage))
+- **Indexes**: Key queries have covering indexes (see [Database Patterns](/development/database-patterns#index-usage))
 - **Pagination**: All list endpoints support `limit`/`offset`
 - **Soft deletes**: Deleted items excluded from queries by default
 
@@ -329,9 +329,9 @@ Registry config                     Database transactions
 
 | Topic | Document |
 |-------|----------|
-| Using services | [Service Patterns](./service-patterns) |
-| Branching and commits | [Git-Style Versioning](./versioning) |
-| Schema and queries | [Database Patterns](./database-patterns) |
-| Coding standards | [Code Conventions](./code-conventions) |
-| Extending the system | [Adding Item Types](./adding-item-types) |
-| Test infrastructure | [Testing](./testing) |
+| Using services | [Service Patterns](/development/service-patterns) |
+| Branching and commits | [Git-Style Versioning](/development/versioning) |
+| Schema and queries | [Database Patterns](/development/database-patterns) |
+| Coding standards | [Code Conventions](/development/code-conventions) |
+| Extending the system | [Adding Item Types](/development/adding-item-types) |
+| Test infrastructure | [Testing](/development/testing) |
