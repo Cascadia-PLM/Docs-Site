@@ -1,0 +1,4446 @@
+openapi: 3.1.0
+info:
+  title: Cascadia PLM API
+  description: |
+    REST API for Cascadia, an open-source, code-first Product Lifecycle Management (PLM) system.
+
+    ## Overview
+    Cascadia provides a developer-centric, type-safe approach to PLM where all customization
+    happens in code. The API supports Git-style versioning for engineering data, with branches,
+    commits, and tags for tracking changes.
+
+    ## Authentication
+    The API uses session-based authentication. Call `/api/auth/login` to obtain a session cookie,
+    which must be included in subsequent requests.
+
+    ## Versioning
+    Items support version context queries via `branch`, `commit`, or `tag` query parameters.
+    All changes flow through ECO (Engineering Change Order) branches and are merged on release.
+
+    ## SysML 2.0 Support
+    Native SysML 2.0 API endpoints are available at `/api/sysml/*` for external tool integration.
+  version: 1.0.0
+  contact:
+    name: Cascadia PLM
+    url: https://github.com/Cascadia-PLM
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.cascadia-plm.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: Session management and login/logout
+  - name: Items
+    description: Generic item CRUD with versioning support
+  - name: Parts
+    description: Part management
+  - name: Documents
+    description: Document management
+  - name: Requirements
+    description: Requirements management
+  - name: Tasks
+    description: Task management
+  - name: Change Orders
+    description: Engineering Change Order (ECO) management and workflows
+  - name: Programs
+    description: Program management and membership
+  - name: Designs
+    description: Design/project management with branching
+  - name: Branches
+    description: Branch management for version control
+  - name: Commits
+    description: Commit history and diffs
+  - name: Files
+    description: File vault operations
+  - name: Relationships
+    description: Item relationship management
+  - name: Workflows
+    description: Workflow definitions and lifecycle management
+  - name: Reports
+    description: Report generation and export
+  - name: Users
+    description: User management
+  - name: Roles
+    description: Role management
+  - name: Workspaces
+    description: Personal workspace branches
+  - name: Admin
+    description: Administrative operations and job management
+  - name: SysML
+    description: SysML 2.0 compatible API
+  - name: Search
+    description: Enterprise search across items
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: cascadia_session
+      description: Session cookie obtained from /api/auth/login
+
+  schemas:
+    # Common schemas
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code
+        details:
+          type: object
+          description: Additional error details
+      required:
+        - error
+
+    PaginationParams:
+      type: object
+      properties:
+        limit:
+          type: integer
+          default: 100
+          description: Maximum number of results
+        offset:
+          type: integer
+          default: 0
+          description: Number of results to skip
+
+    # User schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - name
+
+    UserCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        password:
+          type: string
+          minLength: 8
+      required:
+        - email
+        - name
+        - password
+
+    # Auth schemas
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user:
+          $ref: '#/components/schemas/User'
+
+    SessionResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        user:
+          $ref: '#/components/schemas/User'
+
+    # Item schemas
+    BaseItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemNumber:
+          type: string
+          description: Unique item number (e.g., PRT-000001)
+        itemType:
+          type: string
+          enum: [Part, Document, Requirement, Task, ChangeOrder]
+        name:
+          type: string
+        description:
+          type: string
+        state:
+          type: string
+          description: Lifecycle state
+        revision:
+          type: string
+          description: Revision letter (A, B, C...)
+        designId:
+          type: string
+          format: uuid
+        commitId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isDeleted:
+          type: boolean
+          default: false
+      required:
+        - id
+        - itemNumber
+        - itemType
+        - name
+
+    Part:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            partType:
+              type: string
+              enum: [assembly, component, raw_material, purchased]
+            category:
+              type: string
+            uom:
+              type: string
+              description: Unit of measure
+            weight:
+              type: number
+            material:
+              type: string
+            make_buy:
+              type: string
+              enum: [make, buy]
+
+    PartCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        partType:
+          type: string
+          enum: [assembly, component, raw_material, purchased]
+        category:
+          type: string
+        uom:
+          type: string
+        weight:
+          type: number
+        material:
+          type: string
+        make_buy:
+          type: string
+          enum: [make, buy]
+        branchId:
+          type: string
+          format: uuid
+          description: Branch to create on (required for versioned items)
+      required:
+        - name
+
+    Document:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            documentType:
+              type: string
+              enum: [specification, drawing, procedure, report, other]
+            fileId:
+              type: string
+              format: uuid
+            filename:
+              type: string
+            mimeType:
+              type: string
+
+    DocumentCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        documentType:
+          type: string
+          enum: [specification, drawing, procedure, report, other]
+        branchId:
+          type: string
+          format: uuid
+      required:
+        - name
+
+    Requirement:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            requirementType:
+              type: string
+              enum: [functional, performance, interface, constraint]
+            priority:
+              type: string
+              enum: [must_have, should_have, nice_to_have]
+            verificationMethod:
+              type: string
+              enum: [analysis, demonstration, inspection, test]
+            rationale:
+              type: string
+
+    RequirementCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        requirementType:
+          type: string
+          enum: [functional, performance, interface, constraint]
+        priority:
+          type: string
+          enum: [must_have, should_have, nice_to_have]
+        verificationMethod:
+          type: string
+          enum: [analysis, demonstration, inspection, test]
+        rationale:
+          type: string
+        branchId:
+          type: string
+          format: uuid
+      required:
+        - name
+
+    Task:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            taskType:
+              type: string
+              enum: [design, review, verification, approval]
+            assigneeId:
+              type: string
+              format: uuid
+            dueDate:
+              type: string
+              format: date-time
+            priority:
+              type: string
+              enum: [low, medium, high, critical]
+            completedAt:
+              type: string
+              format: date-time
+
+    TaskCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        taskType:
+          type: string
+          enum: [design, review, verification, approval]
+        assigneeId:
+          type: string
+          format: uuid
+        dueDate:
+          type: string
+          format: date-time
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        branchId:
+          type: string
+          format: uuid
+      required:
+        - name
+
+    ChangeOrder:
+      allOf:
+        - $ref: '#/components/schemas/BaseItem'
+        - type: object
+          properties:
+            changeType:
+              type: string
+              enum: [engineering, deviation, waiver]
+            priority:
+              type: string
+              enum: [low, medium, high, critical]
+            reason:
+              type: string
+            impact:
+              type: string
+            affectedItems:
+              type: array
+              items:
+                type: string
+                format: uuid
+
+    ChangeOrderCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        changeType:
+          type: string
+          enum: [engineering, deviation, waiver]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+        reason:
+          type: string
+        impact:
+          type: string
+      required:
+        - name
+
+    # Program schemas
+    Program:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, on_hold, cancelled]
+        organizationId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+
+    ProgramCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, on_hold, cancelled]
+          default: active
+      required:
+        - name
+
+    ProgramMember:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        programId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [admin, contributor, viewer]
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+        - userId
+        - programId
+        - role
+
+    # Design schemas
+    Design:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        designType:
+          type: string
+          enum: [design, library, family]
+        programId:
+          type: string
+          format: uuid
+        parentDesignId:
+          type: string
+          format: uuid
+        isArchived:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - programId
+
+    DesignCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        designType:
+          type: string
+          enum: [design, library, family]
+          default: design
+        programId:
+          type: string
+          format: uuid
+        parentDesignId:
+          type: string
+          format: uuid
+      required:
+        - name
+        - programId
+
+    # Branch schemas
+    Branch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Branch name (e.g., main, eco/ECO-2024-001, workspace/user)
+        designId:
+          type: string
+          format: uuid
+        branchType:
+          type: string
+          enum: [main, eco, workspace]
+        isProtected:
+          type: boolean
+        headCommitId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - designId
+
+    # Commit schemas
+    Commit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        branchId:
+          type: string
+          format: uuid
+        message:
+          type: string
+        parentCommitId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - branchId
+        - message
+
+    # Tag schemas
+    Tag:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Tag name (e.g., v1.0.0, release-2024-01)
+        designId:
+          type: string
+          format: uuid
+        commitId:
+          type: string
+          format: uuid
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - designId
+        - commitId
+
+    # File schemas
+    File:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        filename:
+          type: string
+        mimeType:
+          type: string
+        size:
+          type: integer
+        itemId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+        checksum:
+          type: string
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - filename
+        - itemId
+
+    # Relationship schemas
+    Relationship:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sourceId:
+          type: string
+          format: uuid
+        targetId:
+          type: string
+          format: uuid
+        relationshipType:
+          type: string
+          enum: [bom, reference, derived_from, satisfies, verifies]
+        quantity:
+          type: number
+        referenceDesignator:
+          type: string
+        findNumber:
+          type: integer
+        metadata:
+          type: object
+      required:
+        - id
+        - sourceId
+        - targetId
+        - relationshipType
+
+    RelationshipCreate:
+      type: object
+      properties:
+        targetId:
+          type: string
+          format: uuid
+        relationshipType:
+          type: string
+          enum: [bom, reference, derived_from, satisfies, verifies]
+        quantity:
+          type: number
+        referenceDesignator:
+          type: string
+        findNumber:
+          type: integer
+        metadata:
+          type: object
+      required:
+        - targetId
+        - relationshipType
+
+    RelationshipBatchCreate:
+      type: object
+      properties:
+        relationships:
+          type: array
+          maxItems: 500
+          items:
+            type: object
+            properties:
+              sourceId:
+                type: string
+                format: uuid
+              targetId:
+                type: string
+                format: uuid
+              relationshipType:
+                type: string
+              quantity:
+                type: number
+              referenceDesignator:
+                type: string
+              findNumber:
+                type: integer
+              metadata:
+                type: object
+            required:
+              - sourceId
+              - targetId
+              - relationshipType
+        replaceExisting:
+          type: boolean
+          default: false
+      required:
+        - relationships
+
+    # Workflow schemas
+    Workflow:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum: [lifecycle, workflow]
+        isActive:
+          type: boolean
+        states:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              transitions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    to:
+                      type: string
+                    conditions:
+                      type: array
+                      items:
+                        type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - type
+
+    WorkflowInstance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflowId:
+          type: string
+          format: uuid
+        itemId:
+          type: string
+          format: uuid
+        currentState:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Report schemas
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        itemType:
+          type: string
+        configuration:
+          type: object
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+
+    # Role schemas
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        isSystem:
+          type: boolean
+      required:
+        - id
+        - name
+
+    # Job schemas
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+        payload:
+          type: object
+        result:
+          type: object
+        error:
+          type: string
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        createdBy:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - status
+
+    # Version context schemas
+    VersionContext:
+      type: object
+      properties:
+        branch:
+          type: string
+        commit:
+          type: string
+          format: uuid
+        tag:
+          type: string
+      description: Version context for querying items at specific points in time
+
+    # Lock schemas
+    LockStatus:
+      type: object
+      properties:
+        isLocked:
+          type: boolean
+        lockedBy:
+          type: string
+          format: uuid
+        lockedByName:
+          type: string
+        lockedAt:
+          type: string
+          format: date-time
+      required:
+        - isLocked
+
+    # Checkout schemas
+    CheckoutStatus:
+      type: object
+      properties:
+        isCheckedOut:
+          type: boolean
+        branchId:
+          type: string
+          format: uuid
+        branchName:
+          type: string
+        checkedOutBy:
+          type: string
+          format: uuid
+        checkedOutAt:
+          type: string
+          format: date-time
+      required:
+        - isCheckedOut
+
+    # SysML schemas
+    SysMLProject:
+      type: object
+      properties:
+        '@id':
+          type: string
+          format: uuid
+        '@type':
+          type: string
+          const: Project
+        name:
+          type: string
+        description:
+          type: string
+        created:
+          type: string
+          format: date-time
+      required:
+        - '@id'
+        - '@type'
+        - name
+
+    SysMLElement:
+      type: object
+      properties:
+        '@id':
+          type: string
+          format: uuid
+        '@type':
+          type: string
+        name:
+          type: string
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Authentication required
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Permission denied
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Resource not found
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Validation failed
+            details:
+              field: name
+              message: Name is required
+
+    ConflictError:
+      description: Resource conflict (e.g., item locked by another user)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Item is locked by another user
+
+security:
+  - sessionAuth: []
+
+paths:
+  # Authentication
+  /api/auth/session:
+    get:
+      tags: [Authentication]
+      summary: Get current session
+      description: Returns the current session information including authenticated user
+      security: []
+      responses:
+        '200':
+          description: Session information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login
+      description: Authenticate with username and password to obtain a session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: Session cookie (8 hour expiration)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout
+      description: End the current session
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/auth/permissions:
+    get:
+      tags: [Authentication]
+      summary: Get current user permissions
+      description: Returns all permissions for the authenticated user
+      responses:
+        '200':
+          description: User permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  permissions:
+                    type: array
+                    items:
+                      type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Items (Generic)
+  /api/items:
+    get:
+      tags: [Items]
+      summary: List items
+      description: List items with optional version context and filtering
+      parameters:
+        - name: designId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by design (required for version queries)
+        - name: branch
+          in: query
+          schema:
+            type: string
+          description: Branch name for version context
+        - name: commit
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Commit ID for version context
+        - name: tag
+          in: query
+          schema:
+            type: string
+          description: Tag name for version context
+        - name: itemType
+          in: query
+          schema:
+            type: string
+            enum: [Part, Document, Requirement, Task, ChangeOrder]
+          description: Filter by item type
+        - name: state
+          in: query
+          schema:
+            type: string
+          description: Filter by lifecycle state
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: includeDeleted
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include soft-deleted items
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BaseItem'
+                  context:
+                    type: object
+                    description: Version context description
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Items]
+      summary: Create item
+      description: Create a new item on a branch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branchId:
+                  type: string
+                  format: uuid
+                  description: Branch to create on
+                itemType:
+                  type: string
+                  enum: [Part, Document, Requirement, Task, ChangeOrder]
+              required:
+                - branchId
+                - itemType
+              additionalProperties: true
+      responses:
+        '201':
+          description: Item created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/BaseItem'
+                  commit:
+                    $ref: '#/components/schemas/Commit'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/batch-create:
+    post:
+      tags: [Items]
+      summary: Batch create items
+      description: Create multiple items in a single request (max 100)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  maxItems: 100
+                  items:
+                    type: object
+                    properties:
+                      itemType:
+                        type: string
+                      data:
+                        $ref: '#/components/schemas/BaseItem'
+                    required:
+                      - itemType
+                      - data
+                bypassBranchProtection:
+                  type: boolean
+                  default: false
+              required:
+                - items
+      responses:
+        '201':
+          description: All items created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BaseItem'
+                  errors:
+                    type: array
+                    items:
+                      type: object
+        '207':
+          description: Partial success (some items created, some failed)
+        '400':
+          description: All items failed to create
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/search:
+    get:
+      tags: [Items, Search]
+      summary: Search items
+      description: Search items by query string
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BaseItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/by-filename/{filename}:
+    get:
+      tags: [Items]
+      summary: Find item by filename
+      description: Look up an item by its associated filename
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/BaseItem'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}:
+    get:
+      tags: [Items]
+      summary: Get item
+      description: Get a specific item with optional version context
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branch
+          in: query
+          schema:
+            type: string
+        - name: commit
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: tag
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/BaseItem'
+                  context:
+                    type: object
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Items]
+      summary: Update item
+      description: Update an item on a branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Branch to update on (required for versioned items)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                commitMessage:
+                  type: string
+              additionalProperties: true
+      responses:
+        '200':
+          description: Item updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  item:
+                    $ref: '#/components/schemas/BaseItem'
+                  commit:
+                    $ref: '#/components/schemas/Commit'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Items]
+      summary: Delete item
+      description: Soft delete an item on a branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: commitMessage
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  commit:
+                    $ref: '#/components/schemas/Commit'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}/checkout:
+    get:
+      tags: [Items]
+      summary: Get checkout status
+      description: Get the checkout status for an item on a branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Checkout status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    $ref: '#/components/schemas/CheckoutStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Items]
+      summary: Checkout item
+      description: Checkout an item to a branch for editing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branchId:
+                  type: string
+                  format: uuid
+              required:
+                - branchId
+      responses:
+        '201':
+          description: Item checked out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branchItem:
+                    type: object
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Items]
+      summary: Cancel checkout
+      description: Cancel the checkout of an item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Checkout cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}/lock:
+    post:
+      tags: [Items]
+      summary: Lock item
+      description: Lock an item for exclusive editing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                force:
+                  type: boolean
+                  default: false
+                  description: Force lock even if locked by another user
+      responses:
+        '200':
+          description: Item locked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  lockedBy:
+                    type: string
+                  lockedAt:
+                    type: string
+                    format: date-time
+        '409':
+          $ref: '#/components/responses/ConflictError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}/unlock:
+    post:
+      tags: [Items]
+      summary: Unlock item
+      description: Release the lock on an item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item unlocked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}/lock-status:
+    get:
+      tags: [Items]
+      summary: Get lock status
+      description: Get the current lock status of an item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lock status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LockStatus'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}/relationships:
+    get:
+      tags: [Items, Relationships]
+      summary: Get item relationships
+      description: Get all relationships for an item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          schema:
+            type: string
+          description: Filter by relationship type
+      responses:
+        '200':
+          description: Item relationships
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  relationships:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Relationship'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Items, Relationships]
+      summary: Add relationship
+      description: Add a relationship from this item to another
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipCreate'
+      responses:
+        '200':
+          description: Relationship added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}/history:
+    get:
+      tags: [Items]
+      summary: Get item history
+      description: Get the version history of an item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Version history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  history:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{id}/graph:
+    get:
+      tags: [Items]
+      summary: Get item relationship graph
+      description: Get the relationship graph for an item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Relationship graph
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nodes:
+                    type: array
+                    items:
+                      type: object
+                  edges:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Parts
+  /api/parts:
+    get:
+      tags: [Parts]
+      summary: List parts
+      description: List all parts with optional design filter
+      parameters:
+        - name: designId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of parts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  parts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Part'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Parts]
+      summary: Create part
+      description: Create a new part
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartCreate'
+      responses:
+        '201':
+          description: Part created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  part:
+                    $ref: '#/components/schemas/Part'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/parts/{id}:
+    get:
+      tags: [Parts]
+      summary: Get part
+      description: Get a specific part
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Part details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  part:
+                    $ref: '#/components/schemas/Part'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Parts]
+      summary: Update part
+      description: Update a part
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartCreate'
+      responses:
+        '200':
+          description: Part updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  part:
+                    $ref: '#/components/schemas/Part'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Parts]
+      summary: Delete part
+      description: Delete a part
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Part deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Documents
+  /api/documents:
+    get:
+      tags: [Documents]
+      summary: List documents
+      parameters:
+        - name: designId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Document'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Documents]
+      summary: Create document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreate'
+      responses:
+        '201':
+          description: Document created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/documents/{id}:
+    get:
+      tags: [Documents]
+      summary: Get document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Documents]
+      summary: Update document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCreate'
+      responses:
+        '200':
+          description: Document updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Documents]
+      summary: Delete document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Requirements
+  /api/requirements:
+    get:
+      tags: [Requirements]
+      summary: List requirements
+      responses:
+        '200':
+          description: List of requirements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requirements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Requirement'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Requirements]
+      summary: Create requirement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequirementCreate'
+      responses:
+        '201':
+          description: Requirement created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requirement:
+                    $ref: '#/components/schemas/Requirement'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/requirements/{id}:
+    get:
+      tags: [Requirements]
+      summary: Get requirement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Requirement details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requirement:
+                    $ref: '#/components/schemas/Requirement'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Requirements]
+      summary: Update requirement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequirementCreate'
+      responses:
+        '200':
+          description: Requirement updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requirement:
+                    $ref: '#/components/schemas/Requirement'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Requirements]
+      summary: Delete requirement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Requirement deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Tasks
+  /api/tasks:
+    get:
+      tags: [Tasks]
+      summary: List tasks
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tasks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Tasks]
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/tasks/{id}:
+    get:
+      tags: [Tasks]
+      summary: Get task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Tasks]
+      summary: Update task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Tasks]
+      summary: Delete task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Change Orders
+  /api/change-orders:
+    get:
+      tags: [Change Orders]
+      summary: List change orders
+      responses:
+        '200':
+          description: List of change orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChangeOrder'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Change Orders]
+      summary: Create change order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeOrderCreate'
+      responses:
+        '201':
+          description: Change order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+                  workflowInstance:
+                    $ref: '#/components/schemas/WorkflowInstance'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}:
+    get:
+      tags: [Change Orders]
+      summary: Get change order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Change order details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Change Orders]
+      summary: Update change order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeOrderCreate'
+      responses:
+        '200':
+          description: Change order updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Change Orders]
+      summary: Delete change order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Change order deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}/submit:
+    post:
+      tags: [Change Orders]
+      summary: Submit ECO for approval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ECO submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}/approve:
+    post:
+      tags: [Change Orders]
+      summary: Approve ECO
+      description: Approve the ECO and trigger auto-release
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comments:
+                  type: string
+      responses:
+        '200':
+          description: ECO approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}/reject:
+    post:
+      tags: [Change Orders]
+      summary: Reject ECO
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comments:
+                  type: string
+      responses:
+        '200':
+          description: ECO rejected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}/release:
+    post:
+      tags: [Change Orders]
+      summary: Release ECO
+      description: Release an approved ECO, merging changes to main
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ECO released
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+                  mergedCommits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Commit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}/affected-items:
+    get:
+      tags: [Change Orders]
+      summary: Get affected items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Items affected by this ECO
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BaseItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}/workflow:
+    get:
+      tags: [Change Orders]
+      summary: Get ECO workflow instance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowInstance'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/change-orders/{id}/workflow/transition:
+    post:
+      tags: [Change Orders]
+      summary: Transition workflow state
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                toState:
+                  type: string
+                comments:
+                  type: string
+              required:
+                - toState
+      responses:
+        '200':
+          description: Workflow transitioned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowInstance'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Programs
+  /api/programs:
+    get:
+      tags: [Programs]
+      summary: List programs
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, completed, on_hold, cancelled]
+      responses:
+        '200':
+          description: List of programs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  programs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Program'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Programs]
+      summary: Create program
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramCreate'
+      responses:
+        '201':
+          description: Program created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  program:
+                    $ref: '#/components/schemas/Program'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/programs/{id}:
+    get:
+      tags: [Programs]
+      summary: Get program
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Program details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  program:
+                    $ref: '#/components/schemas/Program'
+                  userRole:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Programs]
+      summary: Update program
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramCreate'
+      responses:
+        '200':
+          description: Program updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  program:
+                    $ref: '#/components/schemas/Program'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Programs]
+      summary: Delete program
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Program deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/programs/{id}/members:
+    get:
+      tags: [Programs]
+      summary: Get program members
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Program members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProgramMember'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Programs]
+      summary: Add program member
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                role:
+                  type: string
+                  enum: [admin, contributor, viewer]
+              required:
+                - userId
+                - role
+      responses:
+        '201':
+          description: Member added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  member:
+                    $ref: '#/components/schemas/ProgramMember'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Designs
+  /api/designs:
+    get:
+      tags: [Designs]
+      summary: List designs
+      parameters:
+        - name: programId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: designType
+          in: query
+          schema:
+            type: string
+            enum: [design, library, family]
+        - name: includeArchived
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: includeHierarchy
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: List of designs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  designs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Design'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Designs]
+      summary: Create design
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesignCreate'
+      responses:
+        '201':
+          description: Design created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  design:
+                    $ref: '#/components/schemas/Design'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/designs/{id}:
+    get:
+      tags: [Designs]
+      summary: Get design
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Design details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  design:
+                    $ref: '#/components/schemas/Design'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Designs]
+      summary: Update design
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesignCreate'
+      responses:
+        '200':
+          description: Design updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  design:
+                    $ref: '#/components/schemas/Design'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Designs]
+      summary: Delete design
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Design deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/designs/{id}/branches:
+    get:
+      tags: [Designs, Branches]
+      summary: Get design branches
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Design branches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Branch'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/designs/{id}/items:
+    get:
+      tags: [Designs]
+      summary: Get design items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Items in design
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BaseItem'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/designs/{id}/tags:
+    get:
+      tags: [Designs]
+      summary: Get design tags
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Design tags/releases
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tags:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tag'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Branches
+  /api/branches/{id}:
+    get:
+      tags: [Branches]
+      summary: Get branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Branch details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branch:
+                    $ref: '#/components/schemas/Branch'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Branches]
+      summary: Update branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Branch updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  branch:
+                    $ref: '#/components/schemas/Branch'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Branches]
+      summary: Delete branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Branch deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/branches/{id}/commits:
+    get:
+      tags: [Branches, Commits]
+      summary: Get branch commits
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Branch commits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Commit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/branches/{id}/items:
+    get:
+      tags: [Branches]
+      summary: Get branch items
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Items on branch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Commits
+  /api/commits/{id}:
+    get:
+      tags: [Commits]
+      summary: Get commit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Commit details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commit:
+                    $ref: '#/components/schemas/Commit'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/commits/{id}/diff:
+    get:
+      tags: [Commits]
+      summary: Get commit diff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Commit diff
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  diff:
+                    type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Files
+  /api/items/{itemId}/files:
+    get:
+      tags: [Files]
+      summary: List item files
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: mainBranchId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item files
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/File'
+                  count:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/items/{itemId}/files/upload:
+    post:
+      tags: [Files]
+      summary: Upload file to item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                branchId:
+                  type: string
+                  format: uuid
+              required:
+                - file
+      responses:
+        '201':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  file:
+                    $ref: '#/components/schemas/File'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/files/{fileId}:
+    delete:
+      tags: [Files]
+      summary: Delete file
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/files/{fileId}/download:
+    get:
+      tags: [Files]
+      summary: Download file
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/files/{fileId}/metadata:
+    get:
+      tags: [Files]
+      summary: Get file metadata
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Relationships
+  /api/relationships/batch-create:
+    post:
+      tags: [Relationships]
+      summary: Batch create relationships
+      description: Create multiple relationships in a single request (max 500)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipBatchCreate'
+      responses:
+        '201':
+          description: All relationships created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created:
+                    type: integer
+                  skipped:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: object
+        '207':
+          description: Partial success
+        '400':
+          description: All failed
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/relationships/{relationshipId}:
+    get:
+      tags: [Relationships]
+      summary: Get relationship
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Relationship details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Relationships]
+      summary: Update relationship
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelationshipCreate'
+      responses:
+        '200':
+          description: Relationship updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Relationship'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Relationships]
+      summary: Delete relationship
+      parameters:
+        - name: relationshipId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Relationship deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Workflows
+  /api/workflows:
+    get:
+      tags: [Workflows]
+      summary: List workflows
+      parameters:
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [lifecycle, workflow]
+      responses:
+        '200':
+          description: List of workflows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Workflows]
+      summary: Create workflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflow:
+                    $ref: '#/components/schemas/Workflow'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/workflows/{id}:
+    get:
+      tags: [Workflows]
+      summary: Get workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflow:
+                    $ref: '#/components/schemas/Workflow'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Workflows]
+      summary: Update workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Workflow'
+      responses:
+        '200':
+          description: Workflow updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workflow:
+                    $ref: '#/components/schemas/Workflow'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Workflows]
+      summary: Delete workflow
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Reports
+  /api/reports:
+    get:
+      tags: [Reports]
+      summary: List reports
+      parameters:
+        - name: itemType
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Reports]
+      summary: Create report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Report'
+      responses:
+        '201':
+          description: Report created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/reports/{id}:
+    get:
+      tags: [Reports]
+      summary: Get report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    $ref: '#/components/schemas/Report'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Reports]
+      summary: Update report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Report'
+      responses:
+        '200':
+          description: Report updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Reports]
+      summary: Delete report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/reports/{id}/execute:
+    post:
+      tags: [Reports]
+      summary: Execute report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report results
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/reports/{id}/export:
+    post:
+      tags: [Reports]
+      summary: Export report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, xlsx, pdf]
+      responses:
+        '200':
+          description: Report export file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Users
+  /api/users:
+    get:
+      tags: [Users]
+      summary: List users
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: active
+          in: query
+          schema:
+            type: boolean
+        - name: roleId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  stats:
+                    type: object
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Users]
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Users]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags: [Users]
+      summary: Delete user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deleted/deactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/users/{id}/roles:
+    get:
+      tags: [Users, Roles]
+      summary: Get user roles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Users, Roles]
+      summary: Update user roles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                roleIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+                - roleIds
+      responses:
+        '200':
+          description: User roles updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Roles
+  /api/roles:
+    get:
+      tags: [Roles]
+      summary: List roles
+      responses:
+        '200':
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  roles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Workspaces
+  /api/workspaces:
+    get:
+      tags: [Workspaces]
+      summary: List workspaces
+      description: List user's personal workspace branches
+      responses:
+        '200':
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workspaces:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Branch'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags: [Workspaces]
+      summary: Create workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                designId:
+                  type: string
+                  format: uuid
+                workspaceName:
+                  type: string
+              required:
+                - designId
+                - workspaceName
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workspaceId:
+                    type: string
+                    format: uuid
+                  branchName:
+                    type: string
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/workspaces/{id}:
+    get:
+      tags: [Workspaces]
+      summary: Get workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags: [Workspaces]
+      summary: Update workspace
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Workspace updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/workspaces/{id}/convert-to-eco:
+    post:
+      tags: [Workspaces]
+      summary: Convert workspace to ECO
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ECO created from workspace
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  changeOrder:
+                    $ref: '#/components/schemas/ChangeOrder'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Admin
+  /api/admin/jobs:
+    get:
+      tags: [Admin]
+      summary: List background jobs
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, cancelled]
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/admin/jobs/{id}:
+    get:
+      tags: [Admin]
+      summary: Get job details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    $ref: '#/components/schemas/Job'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/admin/jobs/{id}/cancel:
+    post:
+      tags: [Admin]
+      summary: Cancel job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/admin/jobs/{id}/retry:
+    post:
+      tags: [Admin]
+      summary: Retry failed job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Job retried
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    $ref: '#/components/schemas/Job'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  # Enterprise Search
+  /api/enterprise-search:
+    get:
+      tags: [Search]
+      summary: Enterprise search
+      description: Search across all item types
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Search results grouped by type
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        itemType:
+                          type: string
+                        label:
+                          type: string
+                        icon:
+                          type: string
+                        items:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/BaseItem'
+                        total:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # SysML API
+  /api/sysml/projects:
+    get:
+      tags: [SysML]
+      summary: List SysML projects
+      description: List all designs as SysML 2.0 projects
+      parameters:
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: pageStart
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: SysML project collection
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  '@type':
+                    type: string
+                    const: ProjectCollection
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SysMLProject'
+                  pageSize:
+                    type: integer
+                  pageStart:
+                    type: integer
+                  totalResults:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/sysml/projects/{id}:
+    get:
+      tags: [SysML]
+      summary: Get SysML project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SysML project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SysMLProject'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/sysml/projects/{id}/commits:
+    get:
+      tags: [SysML]
+      summary: Get project commits
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Project commits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Commit'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/sysml/projects/{id}/branches/{branchId}/elements:
+    get:
+      tags: [SysML]
+      summary: Get elements on branch
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SysML elements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  elements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SysMLElement'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/sysml/projects/{id}/commits/{commitId}/elements:
+    get:
+      tags: [SysML]
+      summary: Get elements at commit
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: commitId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SysML elements at commit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  elements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SysMLElement'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'

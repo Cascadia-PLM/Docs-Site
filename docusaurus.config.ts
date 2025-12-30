@@ -44,6 +44,21 @@ const config: Config = {
 
   presets: [
     [
+      'redocusaurus',
+      {
+        specs: [
+          {
+            id: 'cascadia-api',
+            spec: 'openapi/openapi.yaml',
+            route: '/api-reference/',
+          },
+        ],
+        theme: {
+          primaryColor: '#3366CC',
+        },
+      },
+    ],
+    [
       'classic',
       {
         docs: {
@@ -78,6 +93,11 @@ const config: Config = {
           sidebarId: 'docsSidebar',
           position: 'left',
           label: 'Documentation',
+        },
+        {
+          to: '/api-reference/',
+          position: 'left',
+          label: 'API Reference',
         },
         {
           href: 'https://cascadiaplm.com',
