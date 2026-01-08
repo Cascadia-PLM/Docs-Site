@@ -192,7 +192,48 @@ describe('MyComponent', () => {
 
 ## E2E Tests
 
-Test complete user workflows with Playwright:
+Test complete user workflows with Playwright.
+
+### What to E2E Test
+
+E2E tests are expensive. A test should meet **at least 2** of these criteria:
+
+| Criteria | Description |
+|----------|-------------|
+| **Critical Path** | Users blocked if this breaks |
+| **Multi-System** | Spans systems unit tests can't cover |
+| **Data Integrity** | Bug could cause data loss/corruption |
+| **Stable Contract** | Behavior unlikely to change |
+
+**DO test:** Authentication, create item, protected routes, search
+
+**DON'T test (use unit instead):** Form validation, API errors, component rendering, permissions
+
+### Test Tiers
+
+```
+Tier 1 (@tier1) - Smoke, every PR (~2 min)
+Tier 2 (@tier2) - Core workflows, merge to main (~10 min)
+Tier 3 - Edge cases, nightly
+```
+
+Run specific tiers:
+```bash
+npx playwright test --grep @tier1
+```
+
+### Selector Strategy
+
+Priority order for resilient selectors:
+
+1. **Role-based**: `page.getByRole('button', { name: 'Submit' })`
+2. **Label-based**: `page.getByLabel('Username')`
+3. **Test ID**: `page.getByTestId('submit-button')`
+4. **Text content**: `page.getByText('Sign in')`
+
+Avoid CSS selectors, complex nested selectors, and index-based selectors.
+
+### Writing E2E Tests
 
 ```typescript
 import { test, expect } from './fixtures'

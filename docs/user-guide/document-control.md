@@ -7,6 +7,9 @@ title: Document Control
 
 Documents in Cascadia PLM provide controlled storage and versioning for technical documentation, specifications, drawings, and other files associated with your products.
 
+![Documents List](/img/screenshots/documents-list.png)
+*The Documents page showing all documents with file details, state, and usage information.*
+
 ## Documents List Overview
 
 The Documents page displays all documents in the system with summary statistics and filtering options.

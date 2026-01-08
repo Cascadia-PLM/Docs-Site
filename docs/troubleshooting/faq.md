@@ -185,13 +185,17 @@ LOG_LEVEL=debug npm run dev
 
 ### How do I reset my admin password?
 
-Use the database directly:
-```sql
--- Update with a new hashed password
-UPDATE users SET password_hash = '...' WHERE email = 'admin@example.com';
+The easiest method is to re-run the seed script, which will reset the admin password:
+
+```bash
+npm run db:seed
 ```
 
-Or delete the user and re-run the seed script.
+This resets the admin account to:
+- **Email**: `admin@cascadia.local`
+- **Password**: `Cascadia`
+
+Alternatively, you can update the password hash directly in the database.
 
 ### My changes aren't showing up
 

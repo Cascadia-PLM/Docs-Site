@@ -5,7 +5,10 @@ title: Requirements
 
 # Requirements Management
 
-Requirements in Cascadia PLM help you capture, track, and verify product requirements throughout the development lifecycle. Link requirements to parts and tests to ensure complete traceability.
+Requirements in Cascadia PLM help you capture, track, and verify product requirements throughout the development lifecycle. Link requirements to parts to ensure complete traceability from customer needs to implementation.
+
+![Requirements List](/img/screenshots/requirements-list.png)
+*The Requirements page showing all requirements with priority, status, and lifecycle state.*
 
 ## Requirements List Overview
 
@@ -17,177 +20,172 @@ At the top of the page, you'll see four summary cards:
 
 | Statistic | Description |
 |-----------|-------------|
-| **Total Requirements** | Count of all requirements |
+| **Total Requirements** | Count of all requirements in the system |
 | **Proposed** | Requirements in initial proposal state |
 | **Approved** | Requirements that have been approved |
-| **Verified** | Requirements that have been verified through testing |
+| **Verified** | Requirements that have been verified |
+
+### Table Columns
+
+The requirements table shows:
+
+| Column | Description |
+|--------|-------------|
+| **Item Number** | Unique identifier (e.g., REQ-T1767...) |
+| **Rev** | Current revision letter |
+| **Name** | Descriptive name of the requirement |
+| **Type** | Category (Functional, Performance, etc.) |
+| **Priority** | Importance level badge (Must Have, High, Medium, Low) |
+| **Status** | Verification status (Open, Approved, Rejected, etc.) |
+| **State** | Lifecycle state (Draft, In Review, Released) |
+| **Actions** | Menu for edit, delete, and other actions |
 
 ### Filtering and Search
 
-- **Design Filter**: Filter requirements by design
-- **Search**: Find requirements by item number or name
-- **Column Sorting**: Click column headers to sort
+- **Program/Design Filter**: Use the breadcrumb dropdowns to filter by program and design
+- **Search**: Use the search box to find requirements by item number or name
+- **Column Sorting**: Click column headers to sort ascending/descending
+- **Export**: Click **Export CSV** to download requirements data
 
 ## Creating a Requirement
 
 1. Navigate to **Requirements** in the sidebar
 2. Click **+ Create Requirement** in the top right
-3. Fill in the requirement details:
+3. Select a workspace or create a new one
+4. Fill in the requirement details
 
 ### Required Fields
 
 | Field | Description |
 |-------|-------------|
 | **Design** | The design this requirement belongs to |
-| **Item Number** | Unique identifier (auto-generated, e.g., REQ-1001) |
-| **Revision** | Version identifier (default: A) |
+| **Item Number** | Unique identifier (auto-generated) |
 
-### Optional Fields
+### Core Fields
 
 | Field | Description |
 |-------|-------------|
-| **Name** | Descriptive name (e.g., "User Authentication") |
+| **Name** | Descriptive name (e.g., "System shall support 100 concurrent users") |
 | **Description** | Detailed requirement statement |
-| **Type** | Requirement type (Functional, Performance, etc.) |
-| **Priority** | Importance level (High, Medium, Low) |
-| **Status** | Current verification status |
-| **Source** | Who requested this requirement |
-| **Category** | Classification category |
-| **Acceptance Criteria** | Criteria for verification |
+| **Type** | Requirement category (see types below) |
+| **Priority** | Importance level |
+| **Status** | Verification status |
+| **Source** | Origin of the requirement (customer, regulatory, internal) |
+| **Acceptance Criteria** | How to verify the requirement is met |
 
 4. Click **Create Requirement** to save
 
 ## Requirement Types
 
-Cascadia supports various requirement types:
+| Type | Description | Examples |
+|------|-------------|----------|
+| **Functional** | What the product must do | "System shall authenticate users" |
+| **Performance** | Speed, capacity, efficiency | "Response time < 2 seconds" |
+| **Interface** | Integration and connectivity | "Shall communicate via REST API" |
+| **Safety** | Safety-critical requirements | "Emergency stop within 100ms" |
+| **Regulatory** | Compliance requirements | "Shall meet FDA 21 CFR Part 11" |
+| **Environmental** | Operating conditions | "Operate at -20°C to +50°C" |
 
-| Type | Description |
-|------|-------------|
-| **Functional** | What the product must do |
-| **Performance** | Speed, capacity, efficiency targets |
-| **Interface** | Integration and connectivity needs |
-| **Safety** | Safety-related requirements |
-| **Regulatory** | Compliance and certification needs |
-| **Environmental** | Operating environment constraints |
+## Priority Levels
 
-## Requirement Properties
+Priority indicates the importance of implementing the requirement:
 
-### Priority Levels
+| Priority | Description | When to Use |
+|----------|-------------|-------------|
+| **Must Have** | Required for release | Non-negotiable requirements |
+| **High** | Critical for success | Important customer needs |
+| **Medium** | Desired feature | Standard requirements |
+| **Low** | Nice to have | Future enhancements |
 
-| Priority | Description |
-|----------|-------------|
-| **Critical** | Must-have for product release |
-| **High** | Important for customer satisfaction |
-| **Medium** | Desired but not essential |
-| **Low** | Nice-to-have features |
+## Status vs State
 
-### Status States
+Cascadia distinguishes between two different concepts:
 
-| Status | Description |
-|--------|-------------|
-| **Proposed** | Initial requirement capture |
-| **Approved** | Requirement has been reviewed and approved |
-| **In Progress** | Implementation underway |
+### Status (Verification Status)
+
+The **Status** field tracks whether the requirement has been verified:
+
+| Status | Meaning |
+|--------|---------|
+| **Open** | Not yet verified |
+| **Approved** | Requirement approved for implementation |
+| **Rejected** | Requirement not approved |
 | **Verified** | Testing confirms requirement is met |
-| **Rejected** | Requirement was not approved |
 
-## Requirement Traceability
+### State (Lifecycle State)
 
-### Linking to Parts
+The **State** field tracks the requirement's position in the lifecycle workflow:
 
-Requirements can be linked to parts to show:
-- Which parts implement which requirements
-- Coverage analysis for requirement fulfillment
-- Impact assessment when requirements change
+| State | Meaning |
+|-------|---------|
+| **Draft** | Initial creation, can be edited freely |
+| **In Review** | Under review for approval |
+| **Released** | Officially released, changes require ECO |
 
-### Linking to Tests
+## Linking Requirements to Parts
 
-Requirements can be linked to test cases to show:
-- Verification method for each requirement
-- Test results and verification status
-- Gaps in test coverage
+To create traceability between requirements and implementing parts:
 
-## Requirement Hierarchies
+1. Open the requirement detail view
+2. Navigate to the **Relationships** tab
+3. Click **+ Add Relationship**
+4. Search for and select the part that implements this requirement
+5. The relationship appears in the relationship list
 
-### Parent-Child Structure
+This creates a "Satisfies" relationship showing which parts fulfill which requirements.
 
-Requirements can be organized hierarchically:
+### Viewing Traceability
 
-```
-System Requirement
-  - Subsystem Requirement
-      - Component Requirement
-```
+From a requirement, you can see:
+- Which parts are linked to it
+- The relationship graph visualization
 
-### Decomposition
-
-Break down high-level requirements:
-1. Start with system-level requirements
-2. Decompose into subsystem requirements
-3. Further decompose to component requirements
-4. Link components to implementing parts
-
-## Verification Tracking
-
-### Verification Methods
-
-| Method | Description |
-|--------|-------------|
-| **Test** | Verified through testing |
-| **Demonstration** | Verified through demonstration |
-| **Analysis** | Verified through analysis or simulation |
-| **Inspection** | Verified through visual inspection |
-
-### Acceptance Criteria
-
-Define clear acceptance criteria for each requirement:
-- Measurable success conditions
-- Test procedures to follow
-- Expected results
+From a part, you can see:
+- Which requirements it satisfies
+- Impact when requirements change
 
 ## Revision Control
 
-Requirements follow the same revision control as parts:
+Requirements follow the same Git-style revision control as parts:
 
-### Making Changes
+### Initial Creation
 
-- Released requirements cannot be modified directly
-- Create an ECO to revise requirements
-- Work on requirements in the ECO branch
-- When released, revision increments
+- New requirements are created in **Draft** state
+- They can be edited freely while in Draft
+- Initial revision is typically "-" (unassigned) until released
 
-### Change Impact
+### Making Changes to Released Requirements
 
-When requirements change:
-1. Review linked parts for impact
-2. Update implementation as needed
-3. Re-verify affected requirements
+Once a requirement is released:
+1. Create an ECO that includes the requirement
+2. The ECO creates a branch for your changes
+3. Modify the requirement on the ECO branch
+4. Submit the ECO for approval
+5. When released, changes merge to main and revision increments
 
 ## Best Practices
 
-### Writing Requirements
+### Writing Good Requirements
 
-- Use clear, unambiguous language
-- Make requirements testable
-- Include acceptance criteria
-- Avoid implementation details
+- **Be specific**: "System shall respond within 2 seconds" not "System shall be fast"
+- **Be testable**: Include measurable acceptance criteria
+- **Be atomic**: One requirement per statement
+- **Avoid implementation**: Describe *what*, not *how*
 
-### Organization
+### Using Traceability
 
-- Use consistent naming conventions
-- Organize by category or subsystem
-- Maintain requirement hierarchies
-- Keep requirements atomic (one requirement per statement)
+- Link every requirement to at least one implementing part
+- Review where-used before changing requirements
+- Update linked parts when requirements change
 
-### Traceability
+### Organizing Requirements
 
-- Link all requirements to implementing parts
-- Link requirements to verification tests
-- Review traceability regularly
-- Update links when designs change
+- Use consistent naming conventions (e.g., "REQ-SYS-001")
+- Group by type or subsystem using the Type field
+- Use the Source field to track requirement origin
 
 ## Next Steps
 
 - [Parts Management](/user-guide/parts-management) - Creating parts that implement requirements
-- [Change Orders](/user-guide/change-orders) - Managing requirement changes
+- [Change Orders](/user-guide/change-orders) - Managing requirement changes through ECOs
 - [Programs and Designs](/user-guide/programs-and-designs) - Organizing requirements in designs

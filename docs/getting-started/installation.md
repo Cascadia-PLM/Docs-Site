@@ -90,8 +90,8 @@ The application will be available at `http://localhost:3000`.
 
 After running the seed script, you can log in with:
 
-- **Email**: `admin@example.com`
-- **Password**: `admin123`
+- **Email**: `admin@cascadia.local`
+- **Password**: `Cascadia`
 
 :::warning
 Change the default password immediately in a production environment!
@@ -135,11 +135,11 @@ npm run db:push
 # Open Drizzle Studio GUI
 npm run db:studio
 
-# Seed minimal data
+# Seed minimal data (admin user, roles, sample program)
 npm run db:seed
 
-# Seed comprehensive test data
-npm run db:seed:test
+# Reset database and reseed (development only)
+npm run db:reset:seed
 ```
 
 ## Troubleshooting
