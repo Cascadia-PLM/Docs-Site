@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Documentation site for Cascadia PLM, built with Docusaurus 3.9. Deployed to Firebase Hosting at docs.cascadiaplm.com.
+Documentation site for Cascadia PLM, built with Docusaurus 3.9.
 
 **Requirements:** Node.js >= 20.0
 
@@ -14,8 +14,6 @@ Documentation site for Cascadia PLM, built with Docusaurus 3.9. Deployed to Fire
 # Development
 yarn start          # Start dev server at localhost:3000
 yarn build          # Build static site to ./build
-yarn deploy         # Build and deploy to Firebase
-yarn deploy:preview # Deploy to preview channel
 yarn typecheck      # Run TypeScript type checking
 yarn clear          # Clear Docusaurus cache
 ```

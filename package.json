@@ -10,8 +10,6 @@
     "swizzle": "docusaurus swizzle",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
-    "deploy": "docusaurus build && firebase deploy --only hosting",
-    "deploy:preview": "docusaurus build && firebase hosting:channel:deploy preview",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
     "typecheck": "tsc"
